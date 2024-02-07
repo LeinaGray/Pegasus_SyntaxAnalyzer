@@ -1,0 +1,25 @@
++ - * / % 
+|| && ! == != > < >= <=
+
+// This is a single line comment
+/* This 
+is 
+a 
+multi 
+line 
+comment */
+Let
+Grade
+Let Grade :Mon 
+remember shorten it was
+
+"String asldk asdaksjdas"
+'s'
+1234
+
+A Score could only be from 1 to 100 
+A Grade could only be "Very Good", "Good", "Average", "Pass", "Fail"
+A Gender could only be "Female", "Male"
+
+Let Score: Math be 101
+Show Math
