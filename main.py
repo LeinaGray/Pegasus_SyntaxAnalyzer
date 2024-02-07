@@ -92,25 +92,6 @@ for lexeme in lexemes:
 
 import re
 
-def fix_unsorted_array(arr):
-  """
-  Checks if an array is in order and prints the index of where an element should be deleted and inserted.
-
-  Args:
-      arr: The unsorted array.
-
-  Returns:
-      None
-  """
-  sorted_arr = sorted(arr)
-  for i, item in enumerate(arr):
-    if item != sorted_arr[i]:
-      # Find the correct position for the item
-      correct_index = sorted_arr.index(item)
-      print(f"delete {item} in index {i}")
-      print(f"insert at index {correct_index}")
-      break
-
 def has_all_items(tokens, grammar_rules):
     missing_tokens = []
     grammar_index = []
