@@ -32,7 +32,7 @@ import tokenize
 import io
 
 # test code
-code = """A Score could be only \tshow 8"""
+code = """Let score be 8 show"""
 
 # Single-line and multi-line comments
 comment_pattern = r"//(.*?)\n|\/\*[\s\S]*?\*\/"
@@ -84,7 +84,7 @@ for lexeme in lexemes:
         if re.match(pattern, lexeme):
             if lexeme == "\n":
                 
-              print(f"{count:2}\t|\t{' ':10}\t|\t{token_name:10}")
+              print(f"{count:<2}|  {'--':<10}\t|  {token_name:<10}")
               TOKEN_NAMES.append(token_name)
               count+=1
               break
@@ -96,30 +96,70 @@ for lexeme in lexemes:
 
 import re
 
+def split_tokens_into_statements(tokens):
+    statements = []
+    current_statement = []
+
+    for token in tokens:
+        if token == "DELIM_NEWLINE":
+            statements.append(current_statement)
+            current_statement = []
+        else:
+            current_statement.append(token)
+
+    # Add the last statement if it doesn't end with a newline
+    if current_statement:
+        statements.append(current_statement)
+
+    return statements
+
 def analyze_syntax(tokens, grammar_rules):
     missing_tokens = []
     misplaced_tokens = []
     correct_tokens = []
     grammar_index = []
 
-    for statement in grammar_rules:
-        grammar_index.clear()
-        for token in tokens:
-            if token in statement:
-                correct_tokens.append(token)
-                grammar_index.append(statement.index(token))
-            if any(re.match(terminal, token) for terminal in statement if isinstance(terminal, str) and terminal.startswith("^")):
-                correct_tokens.append(token) 
-                grammar_index.append(statement.index(next(terminal for terminal in statement if re.match(terminal, token))))
-            if token not in statement:
-                misplaced_tokens.append(token)
-                print("misplaced: "+token)
-        break  
-    for terminal in statement:
-        if terminal not in tokens  and not any(re.match(terminal, token) for token in tokens):
-            print(terminal)
-            missing_tokens.append(terminal)
+    statements = split_tokens_into_statements(tokens)
+    
+    for statement in statements:
+        matched_rules = []
+        print("\n") 
+        for rule in grammar_rules:
+            matching_tokens = 0
+            grammar_index.clear()    
+
+            for token in tokens:
+                if token in rule:
+                    correct_tokens.append(token)
+                    grammar_index.append(rule.index(token))
+                    matching_tokens += 1
+                elif any(re.match(terminal, token) for terminal in rule if isinstance(terminal, str) and terminal.startswith("^")):
+                    correct_tokens.append(token) 
+                    grammar_index.append(rule.index(next(terminal for terminal in rule if re.match(terminal, token))))
+                    matching_tokens += 1
+                elif token not in rule and not matched_rules:
+                    misplaced_tokens.append(token)
+                    
+            if matching_tokens >= len(statement):
+                matched_rules.append(rule)
+                break  
+        if matched_rules:
+            print(f"Statement: {statement} matches rules: {matched_rules}")
+            # Compare statement with tokens in matched_rules
+            for token in statement:
+                if token not in correct_tokens:
+                    missing_tokens.append(token)
             
+            # Add your further processing logic here
+        else:
+            print(f"Statement: {statement} doesn't match any rule")
+        for terminal in rule:
+            if terminal not in tokens  and not any(re.match(terminal, token) for token in tokens):
+                missing_tokens.append(terminal)
+        print("Missing tokens:", missing_tokens)
+        print("Misplaced tokens:", misplaced_tokens)
+
+          
     
 
         # for terminal in statement:
@@ -166,8 +206,8 @@ def analyze_syntax(tokens, grammar_rules):
 
 LITERAL = r"^LIT_(STRING|INT|FLOAT|BOOL)$"
 LIST = r"LITERAL"
-GRAMMAR_RULES = [["NW", "DT_MOD", "ID", "COULD_KW", "ONLY_KW", "BE_KW", LITERAL],
-                 ["LET_KW", "ID", "BE_KW", r"^LIT_(STRING|INT|FLOAT|BOOL)$"]]
+GRAMMAR_RULES = [["NW", "DT_MOD", "ID", "COULD_KW", "ONLY_KW", "BE_KW", LITERAL, "DELIM_NEWLINE"],
+                 ["LET_KW", "ID", "BE_KW", LITERAL, "DELIM_NEWLINE"]]
 
 missing_items = analyze_syntax(TOKEN_NAMES, GRAMMAR_RULES)
 # print(token_index)
