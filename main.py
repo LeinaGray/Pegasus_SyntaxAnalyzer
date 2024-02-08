@@ -364,7 +364,8 @@ GRAMMAR_RULES = [
                  ["NW", "DT_MOD", "ID", "COULD_KW", "ONLY_KW", "BE_KW", LITERAL, "DELIM_NEWLINE"],
                  ["NAME_CONV", "ID", "PREP" , "ID"],
                  ["ACTION", r"^(PTR|ID)"],
-                 ["ACTION", r"^(PTR|ID)"]]
+                 ["ACTION", LITERAL],
+                 ["ID", "REL_OP", LITERAL, "ARITH_OP", LITERAL]]
 
 missing_items = analyze_syntax(lexemes, token_pattern_dict, TOKEN_NAMES, GRAMMAR_RULES)
 # print(token_index)
