@@ -154,7 +154,7 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
         matched_rules = []
         
 
-        print("\n\n") 
+        print("") 
         for rule in grammar_rules:
             correct_tokens.clear()
             missing_tokens.clear()
@@ -179,7 +179,7 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
             # THEN STATEMENT MATCHES RULES
             isMatched = False
             if num_matched_tokens > num_unmatched_tokens:
-                print("matches ", rule)
+                # print("matches ", rule)
                 isMatched = True
             
             # STORE MATCHED RULE
@@ -203,18 +203,18 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
                     if token not in matched_rule and not token_has_regex:
                         misplaced_tokens.append(token)
                         misplaced_indices.append(statement.index(token))
-                        if len(misplaced_tokens) > 0:
-                            print("Misplaced Tokens"+ token)
+                        # if len(misplaced_tokens) > 0:
+                        #     print("Misplaced Tokens"+ token)
                 
-                print("Correct Tokens", correct_tokens)
-                print("Misplaced Tokens", misplaced_tokens)
+                # print("Correct Tokens", correct_tokens)
+                # print("Misplaced Tokens", misplaced_tokens)
 
                  # CHECK FOR MISSING TOKENS
                 for word in matched_rule:
                     if word not in statement and not any(re.match(token, word) for token in statement):
                         missing_tokens.append(word)
                         missing_indices.append(matched_rule.index(word))
-                        print("Missing keyword "+ word)
+                        # print("Missing keyword "+ word)
                 
                 # CHECK FOR ORDER OF TOKENS
                 for token in statement:
@@ -237,8 +237,8 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
                         if grammar_index[i] > grammar_index[i + 1]:
                             unsorted_index.append(i)
 
-                    print(grammar_index)
-                    print(unsorted_index)
+                    # print(grammar_index)
+                    # print(unsorted_index)
                 
                 import colorama
                 colorama.init()
@@ -267,7 +267,7 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
                 print("")
                 print("\t" + " " * spaces + colorama.Fore.RED +"^ Missing " + f"{missing_tokens}" +  colorama.Style.RESET_ALL)
                 
-                print(grammar_index)
+                # print(grammar_index)
                 break
                 
 
