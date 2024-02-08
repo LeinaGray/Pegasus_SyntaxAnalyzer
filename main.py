@@ -139,7 +139,7 @@ def split_tokens_into_statements(tokens, delim):
 
 def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
     
-    # code = split_tokens_into_statements(lexemes, "\n")
+    code = split_tokens_into_statements(lexemes, "\n")
     statements = split_tokens_into_statements(tokens, "DELIM_NEWLINE")
     
     for statement in statements:
@@ -237,6 +237,33 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
                     print(grammar_index)
                     print(unsorted_index)
                 
+                import colorama
+                colorama.init()
+                
+                print(colorama.Fore.RED + "Invalid Syntax:" + colorama.Style.RESET_ALL)
+                print("\t", end="")
+                spaces = 0
+                i=0
+                for lexeme in lexemes:
+                    if lexeme == "\n":
+                        break
+                    for missing in missing_indices:
+                        if missing == i:
+                            spaces = sum(len(word) for word in lexemes[:i+1]) + i
+                            print(colorama.Fore.RED + "_" + colorama.Style.RESET_ALL, end=" ")
+                            break
+                    for misplaced in misplaced_indices:
+                        if misplaced == i:
+                            spaces = sum(len(word) for word in lexemes[:i+1])
+                            print(colorama.Fore.RED + lexeme + colorama.Style.RESET_ALL, end=" ")
+                            break  # Exit the loop after highlighting a misplaced lexeme
+                    
+                    else:
+                        print(lexeme, end = " ")
+                    i+=1
+                print("")
+                print("\t" + " " * spaces + colorama.Fore.RED +"^ Missing " + f"{missing_tokens}" +  colorama.Style.RESET_ALL)
+                
                 print(grammar_index)
                 break
                 
@@ -273,30 +300,7 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
         #     print(f"Statement: {statement} doesn't match any rule")
         
         
-        import colorama
-        colorama.init()
         
-        print(colorama.Fore.RED + "Invalid Syntax:" + colorama.Style.RESET_ALL)
-        print("\t", end="")
-        spaces = 0
-        i=0
-        for lexeme in lexemes:
-            for missing in missing_indices:
-                if missing == i:
-                    spaces = sum(len(word) for word in lexemes[:i+1]) + i
-                    print(colorama.Fore.RED + "_" + colorama.Style.RESET_ALL, end=" ")
-                    break
-            for misplaced in misplaced_indices:
-                if misplaced == i:
-                    spaces = sum(len(word) for word in lexemes[:i+1])
-                    print(colorama.Fore.RED + lexeme + colorama.Style.RESET_ALL, end=" ")
-                    break  # Exit the loop after highlighting a misplaced lexeme
-            
-            else:
-                print(lexeme, end = " ")
-            i+=1
-        print("")
-        print("\t" + " " * spaces + colorama.Fore.RED +"^ Missing " + f"{missing_tokens}" +  colorama.Style.RESET_ALL)
         
         # print("Missing indices: ", missing_indices)
         # print("Missing tokens:", missing_tokens)
