@@ -23,10 +23,21 @@ Let score x be 3+3 3 + 3 =
 # print(code)
 
 import re
+import test1 as t
 import tokenize
 import io
 import tkinter as tk
 from tkinter import filedialog, messagebox
+import colorama
+
+misplaced_tokens = []
+misplaced_indices = []
+missing_tokens = []
+missing_indices = []
+grammar_index = []
+
+correct_tokens = []
+matched_rules = []
 
 def remove_comments(string, comment_pattern):
     comments = re.findall(comment_pattern, string)
@@ -57,6 +68,8 @@ def get_file(file_path):
         print("File not found!")
         return ""
 
+
+
 # Single-line and multi-line comments
 comment_pattern = r"//(.*?)\n|\/\*[\s\S]*?\*\/"
 clean_code = remove_comments(code, comment_pattern)
@@ -73,6 +86,7 @@ token_pattern_dict = {
     r"^[Nn]ull$": "LIT_NULL",
     r"'([^'\\]|\\.)'": "LIT_CHAR",
     r"^[Aa]$|^[Aa]n$|^[Tt]he$": "NW",
+    "for": "FOR_KW",
     "could": "COULD_KW",
     "only": "ONLY_KW",
     r"^[Ll]et": "LET_KW",
@@ -87,7 +101,9 @@ token_pattern_dict = {
     r"^always$": "CONST",
     r"^(discrete|continuous|order|boolean)$": "DT_MOD",
     r"^(show|ask|read|write|open|close|change|spell|count)$": "ACTION",  
-    r"^(if|then|else|while)$": "CONJ", 
+    r"^(if)$": "IF_KW", 
+    r"^(then)$": "THEN_KW", 
+    r"^(else)$": "ELSE_KW",
     r"^union$": "UNION",
     r"^(\+|-|\*|\/|%)$": "ARITH_OP",
     r"^[<>]=?|!=": "REL_OP",
@@ -103,7 +119,6 @@ print(f"{'':<2}|  {'lexeme':<10}\t|  {'token_name':<10}")
 print("--------------------------------------")
 count = 0
 for lexeme in lexemes:
-    
     for pattern, token_name in token_pattern_dict.items():
         if re.match(pattern, lexeme):
             if lexeme == "\n":
@@ -118,8 +133,11 @@ for lexeme in lexemes:
             count+=1
             break  # Stop after first match (if needed)
 
+<<<<<<< Updated upstream
 import re
 
+=======
+>>>>>>> Stashed changes
 def split_tokens_into_statements(tokens, delim):
     statements = []
     current_statement = []
@@ -143,6 +161,7 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
     statements = split_tokens_into_statements(tokens, "DELIM_NEWLINE")
     
     for statement in statements:
+<<<<<<< Updated upstream
                 
         misplaced_tokens = []
         misplaced_indices = []
@@ -154,6 +173,9 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
         matched_rules = []
         
 
+=======
+        
+>>>>>>> Stashed changes
         print("") 
         for rule in grammar_rules:
             correct_tokens.clear()
@@ -203,6 +225,10 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
                     if token not in matched_rule and not token_has_regex:
                         misplaced_tokens.append(token)
                         misplaced_indices.append(statement.index(token))
+<<<<<<< Updated upstream
+=======
+                        error()
+>>>>>>> Stashed changes
                         # if len(misplaced_tokens) > 0:
                         #     print("Misplaced Tokens"+ token)
                 
@@ -214,6 +240,10 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
                     if word not in statement and not any(re.match(token, word) for token in statement):
                         missing_tokens.append(word)
                         missing_indices.append(matched_rule.index(word))
+<<<<<<< Updated upstream
+=======
+                        error()
+>>>>>>> Stashed changes
                         # print("Missing keyword "+ word)
                 
                 # CHECK FOR ORDER OF TOKENS
@@ -239,6 +269,7 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
 
                     # print(grammar_index)
                     # print(unsorted_index)
+<<<<<<< Updated upstream
                 
                 import colorama
                 colorama.init()
@@ -270,6 +301,9 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
                 for missing in missing_tokens:
                     for space in spaces:
                         print("\t" + " " * space + colorama.Fore.RED +"^ Missing " + f"{missing}" +  colorama.Style.RESET_ALL)
+=======
+
+>>>>>>> Stashed changes
                 
                 # print(grammar_index)
                 break
@@ -361,16 +395,62 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
     return missing_tokens
 # , grammar_index
 
+def error():
+    colorama.init()
+    print(colorama.Fore.RED + "Invalid Syntax:" + colorama.Style.RESET_ALL)
+    print("\t", end="")
+    spaces = 0
+    i=0
+    for lexeme in lexemes:
+        if lexeme == "\n":
+            break
+        for missing in missing_indices:
+            if missing == i:
+                spaces = sum(len(word) for word in lexemes[:i+1]) + i
+                print(colorama.Fore.RED + "_" + colorama.Style.RESET_ALL, end=" ")
+                break
+        for misplaced in misplaced_indices:
+            if misplaced == i:
+                spaces = sum(len(word) for word in lexemes[:i+1])
+                print(colorama.Fore.RED + lexeme + colorama.Style.RESET_ALL, end=" ")
+                break  # Exit the loop after highlighting a misplaced lexeme
+        else:
+            print(lexeme, end = " ")
+        i+=1
+    print("")
+    print("\t" + " " * spaces + colorama.Fore.RED +"^ Missing " + f"{missing_tokens}" +  colorama.Style.RESET_ALL)
+
 LITERAL = r"^LIT_(STRING|INT|FLOAT|BOOL)$"
 LIST = r"LITERAL"
 GRAMMAR_RULES = [
+<<<<<<< Updated upstream
                  ["LET_KW", "ID", "BE_KW", LITERAL, "DELIM_NEWLINE"],
+=======
+                 ["LET_KW", "ID", "BE_KW", LITERAL, "DELIM_NEWLINE"], #Declaration Statement
+>>>>>>> Stashed changes
                  ["NW", "DT_MOD", "ID", "COULD_KW", "ONLY_KW", "BE_KW", LITERAL, "DELIM_NEWLINE"],
                  ["NAME_CONV", "ID", "PREP" , "ID"],
                  ["ACTION", r"^(PTR|ID)"],
                  ["ACTION", LITERAL],
+<<<<<<< Updated upstream
                  ["ID", "REL_OP", LITERAL, "ARITH_OP", LITERAL]]
 
+=======
+                 ["ID", "REL_OP", LITERAL, "ARITH_OP", LITERAL],
+                 ["IF_KW", "ID", "REL_OP", "ID", "THEN_KW", "ID", "BE_KW", "ARITH_OP", "ID"],
+                 ["ELSE_KW", "IF_KW", "ID", "REL_OP", "ID", "THEN_KW", "ID", "BE_KW", "ARITH_OP", "ID"],
+                 ["ELSE_KW","ID", "BE_KW", "ARITH_OP", "ID"]
+                 ]
+
+GRAMMAR_RULES_STMT = [
+                      "DEC_STMT",
+                      "COULD_STMT",
+                      "VAR_STMT",
+                      "ASK_STMT",
+                      "SHOW_STMT"         
+]
+
+>>>>>>> Stashed changes
 missing_items = analyze_syntax(lexemes, token_pattern_dict, TOKEN_NAMES, GRAMMAR_RULES)
 # print(token_index)
 # if not missing_items:
@@ -403,9 +483,4 @@ missing_items = analyze_syntax(lexemes, token_pattern_dict, TOKEN_NAMES, GRAMMAR
 
 # insertion_index = find_insertion_index(token_index)
 # print(f"{GRAMMAR_RULES[insertion_index]} must be inserted after {lexemes[insertion_index]}")
-
-
-
-
-
 
