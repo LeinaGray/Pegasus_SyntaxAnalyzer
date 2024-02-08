@@ -32,7 +32,7 @@ import tokenize
 import io
 
 # test code
-code = """Let score be 8 show"""
+code = """A Score could only be \nA score could only be 8"""
 
 # Single-line and multi-line comments
 comment_pattern = r"//(.*?)\n|\/\*[\s\S]*?\*\/"
@@ -40,6 +40,7 @@ clean_code = remove_comments(code, comment_pattern)
 print(clean_code + "\n")
 tokens = tokenize.generate_tokens(io.StringIO(clean_code).readline)
 lexemes = [token.string for token in tokens]
+
 
 token_pattern_dict = {
     r'^\d+$': "LIT_INT",
@@ -96,12 +97,12 @@ for lexeme in lexemes:
 
 import re
 
-def split_tokens_into_statements(tokens):
+def split_tokens_into_statements(tokens, delim):
     statements = []
     current_statement = []
 
     for token in tokens:
-        if token == "DELIM_NEWLINE":
+        if token == delim:
             statements.append(current_statement)
             current_statement = []
         else:
@@ -113,51 +114,173 @@ def split_tokens_into_statements(tokens):
 
     return statements
 
-def analyze_syntax(tokens, grammar_rules):
-    missing_tokens = []
-    misplaced_tokens = []
-    correct_tokens = []
-    grammar_index = []
-
-    statements = split_tokens_into_statements(tokens)
+def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
+    
+    # code = split_tokens_into_statements(lexemes, "\n")
+    statements = split_tokens_into_statements(tokens, "DELIM_NEWLINE")
     
     for statement in statements:
+                
+        misplaced_tokens = []
+        misplaced_indices = []
+        missing_tokens = []
+        missing_indices = []
+        grammar_index = []
+
+        correct_tokens = []
         matched_rules = []
-        print("\n") 
+        
+
+        print("\n\n") 
         for rule in grammar_rules:
-            matching_tokens = 0
+            correct_tokens.clear()
+            missing_tokens.clear()
+            missing_indices.clear()
+            misplaced_indices.clear()
+            misplaced_tokens.clear()
             grammar_index.clear()    
 
-            for token in tokens:
-                if token in rule:
-                    correct_tokens.append(token)
-                    grammar_index.append(rule.index(token))
-                    matching_tokens += 1
-                elif any(re.match(terminal, token) for terminal in rule if isinstance(terminal, str) and terminal.startswith("^")):
-                    correct_tokens.append(token) 
-                    grammar_index.append(rule.index(next(terminal for terminal in rule if re.match(terminal, token))))
-                    matching_tokens += 1
-                elif token not in rule and not matched_rules:
-                    misplaced_tokens.append(token)
-                    
-            if matching_tokens >= len(statement):
-                matched_rules.append(rule)
-                break  
-        if matched_rules:
-            print(f"Statement: {statement} matches rules: {matched_rules}")
-            # Compare statement with tokens in matched_rules
+            num_matched_tokens = 0
+            num_unmatched_tokens = 0
+
+            # COUNT NUMBER OF MATCHED TOKENS BETWEEN STATEMENT AND RULE
             for token in statement:
-                if token not in correct_tokens:
-                    missing_tokens.append(token)
+                if token in rule:
+                    num_matched_tokens += 1
+                elif any(re.match(terminal, token) for terminal in rule if isinstance(terminal, str) and terminal.startswith("^")):
+                    num_matched_tokens += 1
+                else:
+                    num_unmatched_tokens += 1
             
-            # Add your further processing logic here
-        else:
-            print(f"Statement: {statement} doesn't match any rule")
-        for terminal in rule:
-            if terminal not in tokens  and not any(re.match(terminal, token) for token in tokens):
-                missing_tokens.append(terminal)
-        print("Missing tokens:", missing_tokens)
-        print("Misplaced tokens:", misplaced_tokens)
+            # IF THERE ARE MORE MATCHES THAN UNMATCHED 
+            # THEN STATEMENT MATCHES RULES
+            isMatched = False
+            if num_matched_tokens > num_unmatched_tokens:
+                print("matches ", rule)
+                isMatched = True
+            
+            # STORE MATCHED RULE
+            matched_rule = []
+            if isMatched == True:
+                for token in rule:
+                    matched_rule.append(token)
+            
+            
+            if isMatched == True:
+                # CHECK IF THERE ARE MISPLACED TOKENS
+                for token in statement:
+                    token_has_regex = False
+                    for word in matched_rule:
+                        if token == word:
+                            correct_tokens.append(token)
+                        elif isinstance(word, str) and word.startswith("^"):
+                            if re.match(word, token):
+                                correct_tokens.append(token)
+                                token_has_regex = True  
+                    if token not in matched_rule and not token_has_regex:
+                        misplaced_tokens.append(token)
+                        if len(misplaced_tokens) > 0:
+                            print("Misplaced Tokens"+ token)
+                
+                print("Correct Tokens", correct_tokens)
+                print("Misplaced Tokens", misplaced_tokens)
+
+                 # CHECK FOR MISSING TOKENS
+                for word in matched_rule:
+                    if word not in statement and not any(re.match(token, word) for token in statement):
+                        print("Missing keyword "+ word)
+                
+                # CHECK FOR ORDER OF TOKENS
+                for token in statement:
+                    token_has_regex = False
+                    for word in matched_rule:
+                        if token == word:
+                            index = matched_rule.index(token)
+                            grammar_index.append(index)
+                        elif isinstance(word, str) and word.startswith("^"):
+                            if re.match(word, token):
+                                index = rule.index(next(terminal for terminal in rule if re.match(terminal, token)))
+                                grammar_index.append(index)
+                                token_has_regex = True
+                    if token not in matched_rule and not token_has_regex:
+                        grammar_index.append(404)
+                
+                if grammar_index:
+                    unsorted_index = []
+                    for i in range(len(grammar_index) - 1):
+                        if grammar_index[i] > grammar_index[i + 1]:
+                            unsorted_index.append(i)
+
+                    print(grammar_index)
+                    print(unsorted_index)
+                
+                print(grammar_index)
+                break
+                
+
+
+
+
+
+
+        #     for token in tokens:
+        #         if token in rule:
+        #             correct_tokens.append(token)
+        #             grammar_index.append(rule.index(token))
+        #         elif any(re.match(terminal, token) for terminal in rule if isinstance(terminal, str) and terminal.startswith("^")):
+        #             correct_tokens.append(token) 
+        #             grammar_index.append(rule.index(next(terminal for terminal in rule if re.match(terminal, token))))
+        #         else:
+        #             misplaced_indices.append(statement.index(token))
+        #             misplaced_tokens.append(token)
+
+        #     if len(correct_tokens) >= len(misplaced_tokens):
+        #         print(len(correct_tokens))
+        #         print(len(misplaced_tokens))
+        #         matched_rules.append(rule)
+        #         break  
+        # for terminal in rule:
+        #     if terminal not in tokens  and not any(re.match(terminal, token) for token in tokens):
+        #         missing_tokens.append(terminal)
+        #         missing_indices.append(rule.index(terminal))
+        # if matched_rules:
+        #     print(f"Statement: {statement} matches rules: {matched_rules}")
+            
+        # else:
+        #     print(f"Statement: {statement} doesn't match any rule")
+        
+        
+        import colorama
+        colorama.init()
+        
+        print(colorama.Fore.RED + "Invalid Syntax:" + colorama.Style.RESET_ALL)
+        print("\t", end="")
+        spaces = 0
+        i=0
+        for lexeme in lexemes:
+            for missing in missing_indices:
+                if missing == i:
+                    spaces = sum(len(word) for word in lexemes[:i+1]) + i
+                    print(colorama.Fore.RED + "_" + colorama.Style.RESET_ALL, end=" ")
+                    break
+            for misplaced in misplaced_indices:
+                if misplaced == i:
+                    spaces = sum(len(word) for word in lexemes[:i+1])
+                    print(colorama.Fore.RED + lexeme + colorama.Style.RESET_ALL, end=" ")
+                    break  # Exit the loop after highlighting a misplaced lexeme
+            
+            else:
+                print(lexeme, end = " ")
+            i+=1
+        print("")
+        print("\t" + " " * spaces + colorama.Fore.RED +"^ Missing " + f"{missing_tokens}" +  colorama.Style.RESET_ALL)
+        
+        # print("Missing indices: ", missing_indices)
+        # print("Missing tokens:", missing_tokens)
+        # print("Misplaced indices: ", misplaced_indices)
+        # print("Misplaced tokens:", misplaced_tokens)
+        # print("Correct tokens:", correct_tokens)
+        # colorama.deinit()
 
           
     
@@ -200,16 +323,17 @@ def analyze_syntax(tokens, grammar_rules):
     #         missing_tokens.append(terminal)
         
                     
-    print(grammar_index)
+    # print(grammar_index)
     return missing_tokens
 # , grammar_index
 
 LITERAL = r"^LIT_(STRING|INT|FLOAT|BOOL)$"
 LIST = r"LITERAL"
-GRAMMAR_RULES = [["NW", "DT_MOD", "ID", "COULD_KW", "ONLY_KW", "BE_KW", LITERAL, "DELIM_NEWLINE"],
-                 ["LET_KW", "ID", "BE_KW", LITERAL, "DELIM_NEWLINE"]]
+GRAMMAR_RULES = [
+                 ["LET_KW", "ID", "BE_KW", LITERAL, "DELIM_NEWLINE"],
+                 ["NW", "DT_MOD", "ID", "COULD_KW", "ONLY_KW", "BE_KW", LITERAL, "DELIM_NEWLINE"],]
 
-missing_items = analyze_syntax(TOKEN_NAMES, GRAMMAR_RULES)
+missing_items = analyze_syntax(lexemes, token_pattern_dict, TOKEN_NAMES, GRAMMAR_RULES)
 # print(token_index)
 # if not missing_items:
 #     print("correct syntax")
