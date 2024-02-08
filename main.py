@@ -1,42 +1,36 @@
-code = """//single-line comments are not recognized as tokens
-/* multi-line comments 
-  are also not recognized
-*/
-//BUG: NEWLINES AFTER COMMENTS ARE RECOGNIZED AS TOKEN
-//separate string literals with commas with or without spaces
-A score be could only be "d","d", "h" "h"
-//separate integer literals with commas with or without spaces
-A score could only be 1,2, 3
-//invalid identifier
-Let score 123d
-//function declaration with tabs
-def function
-    print the word
-//separate operators with or without spaces
-Let score x be 3+3 3 + 3 =
-//separate float literals
-3.12
-//BUG: STRING LITERAL WITH SPACES NOT DETECTED
-"hello d"
-"""
-
-# print(code)
-
 import re
+import tokenize
+import io
+import tkinter as tk
+from tkinter import filedialog, messagebox
+
 def remove_comments(string, comment_pattern):
     comments = re.findall(comment_pattern, string)
     stripped_string = re.sub(comment_pattern, "", string)
     return stripped_string
 
-import tokenize
-import io
+def browse_file():
+    file_path = filedialog.askopenfilename(title="Select a file", filetypes=[("Pegasus Text", "*.pg")])
+    if file_path:
+        messagebox.showinfo("Analysis Complete", "Lexical analysis completed successfully!")
+        return get_file(file_path)
+        
+    else:
+        messagebox.showwarning("Invalid File", "Please select a valid Pegasus file.")
 
-# test code
-code = """Let score be 8 show"""
+def get_file(file_path):
+    try:
+
+        with open(file_path, 'r') as content:
+            return content.read()
+    
+    except FileNotFoundError:
+        print("File not found!")
+        return ""
 
 # Single-line and multi-line comments
 comment_pattern = r"//(.*?)\n|\/\*[\s\S]*?\*\/"
-clean_code = remove_comments(code, comment_pattern)
+clean_code = remove_comments(browse_file(), comment_pattern)
 print(clean_code + "\n")
 tokens = tokenize.generate_tokens(io.StringIO(clean_code).readline)
 lexemes = [token.string for token in tokens]
@@ -93,8 +87,6 @@ for lexeme in lexemes:
             TOKEN_NAMES.append(token_name)
             count+=1
             break  # Stop after first match (if needed)
-
-import re
 
 def split_tokens_into_statements(tokens):
     statements = []
