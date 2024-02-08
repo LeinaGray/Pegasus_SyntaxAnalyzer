@@ -245,19 +245,21 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
                 
                 print(colorama.Fore.RED + "Invalid Syntax:" + colorama.Style.RESET_ALL)
                 print("\t", end="")
-                spaces = 0
+                spaces = []
                 i=0
                 for lexeme in lexemes:
                     if lexeme == "\n":
                         break
                     for missing in missing_indices:
                         if missing == i:
-                            spaces = sum(len(word) for word in lexemes[:i+1]) + i
+                            x = sum(len(word) for word in lexemes[:i+1]) + i
+                            spaces.append(x)
                             print(colorama.Fore.RED + "_" + colorama.Style.RESET_ALL, end=" ")
                             break
                     for misplaced in misplaced_indices:
                         if misplaced == i:
-                            spaces = sum(len(word) for word in lexemes[:i+1])
+                            x = sum(len(word) for word in lexemes[:i+1]) + i
+                            spaces.append(x)
                             print(colorama.Fore.RED + lexeme + colorama.Style.RESET_ALL, end=" ")
                             break  # Exit the loop after highlighting a misplaced lexeme
                     
@@ -265,7 +267,9 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
                         print(lexeme, end = " ")
                     i+=1
                 print("")
-                print("\t" + " " * spaces + colorama.Fore.RED +"^ Missing " + f"{missing_tokens}" +  colorama.Style.RESET_ALL)
+                for missing in missing_tokens:
+                    for space in spaces:
+                        print("\t" + " " * space + colorama.Fore.RED +"^ Missing " + f"{missing}" +  colorama.Style.RESET_ALL)
                 
                 # print(grammar_index)
                 break
