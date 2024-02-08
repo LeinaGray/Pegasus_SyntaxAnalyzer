@@ -32,7 +32,7 @@ import tokenize
 import io
 
 # test code
-code = """A Score could only be \tshow"""
+code = """A Score only could be \tshow"""
 
 # Single-line and multi-line comments
 comment_pattern = r"//(.*?)\n|\/\*[\s\S]*?\*\/"
@@ -92,6 +92,23 @@ for lexeme in lexemes:
 
 import re
 
+def split_tokens_into_statements(tokens):
+    statements = []
+    current_statement = []
+
+    for token in tokens:
+        if token == "DELIM_NEWLINE":
+            statements.append(current_statement)
+            current_statement = []
+        else:
+            current_statement.append(token)
+
+    # Add the last statement if it doesn't end with a newline
+    if current_statement:
+        statements.append(current_statement)
+
+    return statements
+
 def has_all_items(tokens, grammar_rules):
     missing_tokens = []
     grammar_index = []
@@ -120,9 +137,17 @@ def has_all_items(tokens, grammar_rules):
     return missing_tokens, grammar_index
 
 DEC_STMT = ["NW", "ID", "COULD_KW", "ONLY_KW", "BE_KW", r"^LIT_(STRING|INT|FLOAT|BOOL)$"]
+GRAMMAR_RULES = [DEC_STMT]
+statements = split_tokens_into_statements(tokens)
 
-missing_items, token_index = has_all_items(TOKEN_NAMES, DEC_STMT)
-print(token_index)
+missing_items = []
+token_index = []
+
+for statement in statements:
+    for rule in GRAMMAR_RULES:
+        missing_items, token_index = has_all_items(statement, rule)
+
+# print(token_index)
 if not missing_items:
     print("correct syntax")
 else:
