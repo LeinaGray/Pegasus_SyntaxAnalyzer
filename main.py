@@ -23,6 +23,11 @@ Let score x be 3+3 3 + 3 =
 # print(code)
 
 import re
+import tokenize
+import io
+import tkinter as tk
+from tkinter import filedialog, messagebox
+
 def remove_comments(string, comment_pattern):
     comments = re.findall(comment_pattern, string)
     stripped_string = re.sub(comment_pattern, "", string)
@@ -33,6 +38,24 @@ import io
 
 # test code
 code = """A Score could only be \nA score could only be 8"""
+def browse_file():
+    file_path = filedialog.askopenfilename(title="Select a file", filetypes=[("Pegasus Text", "*.pg")])
+    if file_path:
+        messagebox.showinfo("Analysis Complete", "Lexical analysis completed successfully!")
+        return get_file(file_path)
+        
+    else:
+        messagebox.showwarning("Invalid File", "Please select a valid Pegasus file.")
+
+def get_file(file_path):
+    try:
+
+        with open(file_path, 'r') as content:
+            return content.read()
+    
+    except FileNotFoundError:
+        print("File not found!")
+        return ""
 
 # Single-line and multi-line comments
 comment_pattern = r"//(.*?)\n|\/\*[\s\S]*?\*\/"
