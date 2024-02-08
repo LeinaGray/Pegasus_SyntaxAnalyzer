@@ -37,7 +37,7 @@ import tokenize
 import io
 
 # test code
-code = """A Score only could be \nA score could only be 8"""
+code = """A Score could only be show\nA score could only be 8"""
 def browse_file():
     file_path = filedialog.askopenfilename(title="Select a file", filetypes=[("Pegasus Text", "*.pg")])
     if file_path:
@@ -361,7 +361,10 @@ LITERAL = r"^LIT_(STRING|INT|FLOAT|BOOL)$"
 LIST = r"LITERAL"
 GRAMMAR_RULES = [
                  ["LET_KW", "ID", "BE_KW", LITERAL, "DELIM_NEWLINE"],
-                 ["NW", "DT_MOD", "ID", "COULD_KW", "ONLY_KW", "BE_KW", LITERAL, "DELIM_NEWLINE"],]
+                 ["NW", "DT_MOD", "ID", "COULD_KW", "ONLY_KW", "BE_KW", LITERAL, "DELIM_NEWLINE"],
+                 ["NAME_CONV", "ID", "PREP" , "ID"],
+                 ["ACTION", r"^(PTR|ID)"],
+                 ["ACTION", r"^(PTR|ID)"]]
 
 missing_items = analyze_syntax(lexemes, token_pattern_dict, TOKEN_NAMES, GRAMMAR_RULES)
 # print(token_index)
