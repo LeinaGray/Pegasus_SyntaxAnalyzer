@@ -37,7 +37,7 @@ import tokenize
 import io
 
 # test code
-code = """A Score could only be \nA score could only be 8"""
+code = """A Score only could be \nA score could only be 8"""
 def browse_file():
     file_path = filedialog.askopenfilename(title="Select a file", filetypes=[("Pegasus Text", "*.pg")])
     if file_path:
@@ -202,6 +202,7 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
                                 token_has_regex = True  
                     if token not in matched_rule and not token_has_regex:
                         misplaced_tokens.append(token)
+                        misplaced_indices.append(statement.index(token))
                         if len(misplaced_tokens) > 0:
                             print("Misplaced Tokens"+ token)
                 
@@ -211,6 +212,8 @@ def analyze_syntax(lexemes, token_pattern_dict, tokens, grammar_rules):
                  # CHECK FOR MISSING TOKENS
                 for word in matched_rule:
                     if word not in statement and not any(re.match(token, word) for token in statement):
+                        missing_tokens.append(word)
+                        missing_indices.append(matched_rule.index(word))
                         print("Missing keyword "+ word)
                 
                 # CHECK FOR ORDER OF TOKENS
