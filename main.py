@@ -3,7 +3,6 @@ import tokenize
 import io
 import tkinter as tk
 from tkinter import filedialog, messagebox
-import colorama
 
 def remove_comments(string, comment_pattern):
     comments = re.findall(comment_pattern, string)
@@ -37,17 +36,17 @@ tokens = tokenize.generate_tokens(io.StringIO(clean_code).readline)
 lexemes = [token.string for token in tokens]
 
 token_pattern_dict = {
-    r'^\d+$': "LIT_INT",
-    r'^"(?:\\.|[^"\\])*"$': "LIT_STRING",
-    r'^\d+.\d+$': "LIT_FLOAT",
-    r"^[Tt]rue$|^[Ff]alse$": "LIT_BOOL",
-    r"^[Nn]ull$": "LIT_NULL",
-    r"'([^'\\]|\\.)'": "LIT_CHAR",
+    r'^\d+$': "INT",
+    r'^"(?:\\.|[^"\\])*"$': "STRING",
+    r'^\d+.\d+$': "FLOAT",
+    r"^[Tt]rue$|^[Ff]alse$": "BOOL",
+    r"^[Nn]ull$": "NULL",
+    r"'([^'\\]|\\.)'": "CHAR",
     r"^[Aa]$|^[Aa]n$|^[Tt]he$": "NW",
     "could": "COULD_KW",
     "only": "ONLY_KW",
     r"^[Ll]et": "LET_KW",
-    "be": "BE_KW",
+    r"^be$": "BE_KW",
     "of": "REL_OF",
     "is": "REL_IS",
     r"^(this|each|it|was)$": "PTR",
@@ -106,91 +105,149 @@ def split_tokens_into_statements(tokens):
 
     return statements
 
-def analyze_syntax(tokens, grammar_rules):
+def fix_unsorted_array(arr):
+  """
+  Checks if an array is in order and prints the index of where an element should be deleted and inserted.
+
+  Args:
+      arr: The unsorted array.
+
+  Returns:
+      None
+  """
+  sorted_arr = sorted(arr)
+  for i, item in enumerate(arr):
+    if item != sorted_arr[i]:
+      # Find the correct position for the item
+      correct_index = sorted_arr.index(item)
+      print(f"delete {item} in index {i}")
+      print(f"insert at index {correct_index}")
+      break
+
+def has_all_items(tokens, grammar_rules):
     missing_tokens = []
-    misplaced_tokens = []
-    correct_tokens = []
     grammar_index = []
-
-    statements = split_tokens_into_statements(tokens)
-    
-    for statement in statements:
-        matched_rules = []
-        print("\n") 
-        for rule in grammar_rules:
-            matching_tokens = 0
-            grammar_index.clear()    
-
-            for token in tokens:
-                if token in rule:
-                    correct_tokens.append(token)
-                    grammar_index.append(rule.index(token))
-                    matching_tokens += 1
-                elif any(re.match(terminal, token) for terminal in rule if isinstance(terminal, str) and terminal.startswith("^")):
-                    correct_tokens.append(token) 
-                    grammar_index.append(rule.index(next(terminal for terminal in rule if re.match(terminal, token))))
-                    matching_tokens += 1
-                elif token not in rule and not matched_rules:
-                    misplaced_tokens.append(token)
-                    
-            if matching_tokens >= len(statement):
-                matched_rules.append(rule)
-                break  
-        if matched_rules:
-            print(f"Statement: {statement} matches rules: {matched_rules}")
-            # Compare statement with tokens in matched_rules
-            for token in statement:
-                if token not in correct_tokens:
-                    missing_tokens.append(token)
-            
-            # Add your further processing logic here
-        else:
-            print(f"Statement: {statement} doesn't match any rule")
-        for terminal in rule:
-            if terminal not in tokens  and not any(re.match(terminal, token) for token in tokens):
+    for terminal in grammar_rules:
+        # if isinstance(terminal, list):  # Handle nested arrays
+        #     missing_nonterminals = has_all_items(tokens, terminal)
+        #     if missing_nonterminals is not True:
+        #         missing_tokens.extend(missing_nonterminals)
+        if isinstance(terminal, str) and terminal.startswith("^"):  # Check for regex patterns
+            regex = re.compile(terminal[1:])
+            found_match = False
+            for sub_item in tokens:
+                if regex.match(sub_item):
+                    found_match = True
+                    break
+            if not found_match:
                 missing_tokens.append(terminal)
-        print("Missing tokens:", missing_tokens)
-        print("Misplaced tokens:", misplaced_tokens)
+        elif terminal not in tokens:
+            missing_tokens.append(terminal)
 
-LITERAL = r"^LIT_(STRING|INT|FLOAT|BOOL)$"
-LIST = r"LITERAL"
-GRAMMAR_RULES = [
-                 ["LET_KW", "ID", "BE_KW", LITERAL, "DELIM_NEWLINE"],
-                 ["NW", "DT_MOD", "ID", "COULD_KW", "ONLY_KW", "BE_KW", LITERAL, "DELIM_NEWLINE"],
-                 ["NAME_CONV", "ID", "PREP" , "ID"],
-                 ["ACTION", r"^(PTR|ID)"],
-                 ["ACTION", LITERAL],
-                 ["ID", "REL_OP", LITERAL, "ARITH_OP", LITERAL]]
+    for token in tokens:
+        for terminal in grammar_rules:
+            if terminal == token:
+                grammar_index.append(grammar_rules.index(token))
 
-missing_items = analyze_syntax(TOKEN_NAMES, GRAMMAR_RULES)
-# print(token_index)
-# if not missing_items:
-#     print("correct syntax")
-# else:
-#     print("You are missing the following keywords")
-#     for item in missing_items:
-#         print("\t" + item)
+    return missing_tokens, grammar_index
 
-# def find_insertion_index(unsorted_list):
-#     """
-#     Finds the index where an item should be inserted in an unsorted list to maintain sorted order.
+GRAMMAR_RULES = [["NW", "ID", "COULD_KW", "ONLY_KW", "BE_KW", r"^LIT_(STRING|INT|FLOAT|BOOL)$"],
+                 ['DT_DECLARATION*', 'IDENT_DECLARATION*', 'STMT+'],
+                 ['DEC_STMT', 'INPUT_STMT', 'OUT_STMT', 'ASS_STMT', 'COND_STMT', 'REL_STMT', 'CONV_STMT'],
+                 ['CONDITION'],
+                 ['EXPRESSION'],
+                 ['ARITH_EXP', 'REL_EXP', 'LOG_EXP'],
+                 ['IDENTIFIER', 'ARITH_OP', 'IDENTIFIER', 'LITERALS', 'ARITH_OP', 'LITERALS', 'IDENTIFIER', 'ARITH_OP', 'LITERALS', 'LITERALS', 'ARITH_OP', 'IDENTIFIER'],
+                 ['IDENTIFIER', 'REL_OP', 'IDENTIFIER', 'ARITH_EXP', 'REL_OP', 'ARITH_EXP'],
+                 ['REL_EXP', 'LOG_OP', 'REL_EXP', 'NOT_OP', 'IDENTIFIER', 'NOT_OP', 'REL_EXP'],
+                 ['COMMENT'],
+                 ['ML_C', 'SNGL_C'],
+                 ['/*ASCII_SEQUENCE*/'],
+                 ['//ASCII_SEQUENCE'],
+                 ['IDENTIFIER', ',', 'IDENTIFIERS'],
+                 ['STARTING_CHAR', 'STARTING_CHAR', 'SUBSEQUENT_CHARS'],
+                 ['ALPHABET', 'UNDERSCORE'],
+                 ['SUBSEQUENT_CHAR', 'SUBSEQUENT_CHAR', 'SUBSEQUENT_CHAR'],
+                 ['ALPHABET', 'DIGITS', 'UNDERSCORE'],
+                 ['_'],
+                 ['RESERVE_WORDS', 'ARITH_OP', 'REL_OP', 'LOG_OP'],
+                 ['LET_KW', 'COULD_KW', 'ONLY_KW', 'BE_KW', 'REL_OF', 'REL_IS', 'PTR', 'NAME_CONV', 'KW_CONV', 'PREP', 'QUANT', 'CONST', 'DT_MOD', 'OUT_KW', 'CONJ', 'FOR_KW', 'INPUT_KW', 'IF_KW', 'ELIF_KW', 'ELSE_KW'],
+                 ['Let', 'let'],
+                 ['Could', 'could'],
+                 ['Only', 'only'],
+                 ['Be', 'be'],
+                 ['Of', 'of'],
+                 ['Is', 'is'],
+                 ['This', 'this', 'Each', 'each', 'It', 'it', 'Was', 'was'],
+                 ['For', 'for'],
+                 ['Remember', 'remember', 'Shorten', 'shorten', 'Represent', 'represent'],
+                 ['Mean', 'mean'],
+                 ['To', 'to', 'As', 'as', 'In', 'in'],
+                 ['One', 'one'],
+                 ['Always', 'always'],
+                 ['Discrete', 'discrete', 'Continuous', 'continuous', 'Order', 'order', 'Boolean', 'boolean'],
+                 ['Show', 'show', 'Read', 'read', 'Write', 'write', 'Open', 'open', 'Close', 'close', 'Change', 'change', 'Spell', 'spell', 'Count', 'count'],
+                 ['Ask', 'ask'],
+                 ['If', 'if'],
+                 ['Then', 'then'],
+                 ['Else', 'else'],
+                 ['VALUE'],
+                 ['LITERALS', 'IDENTIFIER', 'PTR', 'REL_VALUE'],
+                 ['IDENTIFIER', 'REL_OF', 'STRING_LIT'],
+                 ['LITERAL', 'LITERAL', ',', 'LITERALS'],
+                 ['INT_LIT', 'FLT_LIT', 'BOOL_LIT', 'CHAR_LIT', 'STR_LIT', 'NULL_LIT'],
+                 ['DIGIT', 'DIGITS'],
+                 ['DIGITS', '.', 'DIGITS'],
+                 ['true', 'false'],
+                 ["ASCII", "ESCAPE_SEQUENCE"],
+                 ['ASCII_SEQUENCE', 'ASCII_SEQUENCE', 'ESCAPE_SEQUENCE', 'ASCII_SEQUENCE'],
+                 ['+', '_', '/', '*', '%'],
+                 ['<', '>', '<=', '>=', '==', '!='],
+                 ['&&', '||'],
+                 ['!'],
+                 ['+', '-', '*', '/', '=', '<', '>', '!', '@', '#', '$', '%', '^', '&', '(', ')', '_', '{', '}', '[', ']', '|', '\\', ':', ';', '?', '~'],
+                 ['ALPHABET', 'DIGITS', 'SYMBOLS'],
+                 ['ASCII', 'ASCII', 'ASCII_SEQUENCE', 'ASCII', 'ASCII_SEQUENCE'],
+                 ['ALPHABET', 'DIGITS'],
+                 ['LC', 'UC'],
+                 ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'],
+                 ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+                 ['DIGIT', 'DIGIT', 'DIGITS'],
+                 ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+                 ["'", '"', '\\', '\\t', '\\b', '\\n', '\\r', '\\f', '\\v', '\\a', '?', '\\0'],
+                 ['!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', '}', '~']]
 
-#     Args:
-#         unsorted_list: A list of unsorted elements.
+DEC_STMT = [r"^(NW)?$", "ID", "COULD_KW", "ONLY_KW", "BE_KW", "STRING"] #TODO: ALLOW GRAMMAR RULES ABOVE, FIX LITERALS REGEX(?)
 
-#     Returns:
-#         The index where the item should be inserted.
-#     """
+missing_items, token_index = has_all_items(TOKEN_NAMES, DEC_STMT)
+print(token_index)
+if not missing_items:
+    print("correct syntax")
+else:
+    print("You are missing the following keywords")
+    for item in missing_items:
+        print("\t" + item)
 
-#     if len(unsorted_list) <= 1:
-#         return 0
+def find_insertion_index(unsorted_list):
+    """
+    Finds the index where an item should be inserted in an unsorted list to maintain sorted order.
 
-#     for i in range(1, len(unsorted_list)):
-#         if unsorted_list[i] < unsorted_list[i - 1]:
-#             return i
+    Args:
+        unsorted_list: A list of unsorted elements.
 
-#     # If the item is larger than all elements, return the end of the list
-#     return len(unsorted_list)
+    Returns:
+        The index where the item should be inserted.
+    """
 
-# insertion_index = find_insertion_index(token_index)
-# print(f"{GRAMMAR_RULES[insertion_index]} must be inserted after {lexemes[insertion_index]}")
+    if len(unsorted_list) <= 1:
+        return 0
+
+    for i in range(1, len(unsorted_list)):
+        if unsorted_list[i] < unsorted_list[i - 1]:
+            return i
+
+    # If the item is larger than all elements, return the end of the list
+    return len(unsorted_list)
+
+insertion_index = find_insertion_index(token_index)
+print(f"{DEC_STMT[insertion_index]} must be inserted after {lexemes[insertion_index]}") #TODO: ERROR AT NEW LINES, NEED PROPER ERROR HANDLING
